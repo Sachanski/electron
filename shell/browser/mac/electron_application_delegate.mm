@@ -69,6 +69,8 @@ static base::mac::ScopedObjCClassSwizzler* g_swizzle_imk_input_session;
     electron::Browser::Get()->DidFinishLaunching(base::DictionaryValue());
   }
 
+  [[NSApplication sharedApplication] registerForRemoteNotificationTypes:NSRemoteNotificationTypeAlert | NSRemoteNotificationTypeSound];
+
 #if BUILDFLAG(USE_ALLOCATOR_SHIM)
   // Disable fatal OOM to hack around an OS bug https://crbug.com/654695.
   if (base::mac::IsOS10_12()) {
@@ -78,6 +80,24 @@ static base::mac::ScopedObjCClassSwizzler* g_swizzle_imk_input_session;
         @selector(_coreAttributesFromRange:whichAttributes:completionHandler:));
   }
 #endif
+}
+
+- (void)application:(NSApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    NSLog(@"Registered for remote notifications");
+    const unsigned char *dataBuffer = (const unsigned char *)[deviceToken bytes];
+
+    NSUInteger          dataLength  = [deviceToken length];
+    NSMutableString     *hexString  = [NSMutableString stringWithCapacity:(dataLength * 2)];
+
+    for (int i = 0; i < dataLength; ++i)
+        [hexString appendString:[NSString stringWithFormat:@"%02lx", (unsigned long)dataBuffer[i]]];
+
+    NSString* token = [NSString stringWithString:hexString];
+    NSLog(@"%@", token);
+}
+
+- (void)application:(NSApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+    NSLog(@"Error registering %@", error);
 }
 
 - (NSMenu*)applicationDockMenu:(NSApplication*)sender {
