@@ -64,12 +64,11 @@ static base::mac::ScopedObjCClassSwizzler* g_swizzle_imk_input_session;
 
   if (user_notification) {
     if ([user_notification isKindOfClass:[NSUserNotification class]]) {
-      notification_info =
-        [(NSUserNotification *)user_notification userInfo];
+      notification_info = [(NSUserNotification*)user_notification userInfo];
     } else if (@available(macOS 10.14, *)) {
       if ([user_notification isKindOfClass:[UNNotificationResponse class]]) {
-        notification_info = atom::UNNotificationResponseToNSDictionary(
-          (UNNotificationResponse *)user_notification);
+        notification_info = electron::UNNotificationResponseToNSDictionary(
+            (UNNotificationResponse*)user_notification);
       }
     }
   }
@@ -157,32 +156,30 @@ static base::mac::ScopedObjCClassSwizzler* g_swizzle_imk_input_session;
 - (void)application:(NSApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
   // https://stackoverflow.com/a/16411517
-  const char *tokenData = (const char *)[deviceToken bytes];
-  NSMutableString *tokenString = [NSMutableString string];
+  const char* tokenData = (const char*)[deviceToken bytes];
+  NSMutableString* tokenString = [NSMutableString string];
   for (NSUInteger i = 0; i < [deviceToken length]; i++) {
     [tokenString appendFormat:@"%02.2hhX", tokenData[i]];
   }
-  atom::Browser* browser = atom::Browser::Get();
+  electron::Browser* browser = electron::Browser::Get();
   browser->DidRegisterForRemoteNotificationsWithDeviceToken(
-    base::SysNSStringToUTF8(tokenString));
+      base::SysNSStringToUTF8(tokenString));
 }
 
 - (void)application:(NSApplication*)application
     didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
   std::string error_message(base::SysNSStringToUTF8(
-    [NSString stringWithFormat:@"%ld %@ %@",
-      [error code],
-      [error domain],
-      [error userInfo]]));
-  atom::Browser* browser = atom::Browser::Get();
+      [NSString stringWithFormat:@"%ld %@ %@", [error code], [error domain],
+                                 [error userInfo]]));
+  electron::Browser* browser = electron::Browser::Get();
   browser->DidFailToRegisterForRemoteNotificationsWithError(error_message);
 }
 
 - (void)application:(NSApplication*)application
     didReceiveRemoteNotification:(NSDictionary*)userInfo {
   std::unique_ptr<base::DictionaryValue> user_info =
-      atom::NSDictionaryToDictionaryValue(userInfo);
-  atom::Browser* browser = atom::Browser::Get();
+      electron::NSDictionaryToDictionaryValue(userInfo);
+  electron::Browser* browser = electron::Browser::Get();
   browser->DidReceiveRemoteNotification(*user_info);
 }
 
