@@ -516,6 +516,7 @@ source_set("electron_lib") {
         "Squirrel.framework",
         "ReactiveCocoa.framework",
         "Mantle.framework",
+        "UserNotifications.framework",
       ]
       cflags_objcc = [
         "-F",
