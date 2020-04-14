@@ -1281,6 +1281,16 @@ app.moveToApplicationsFolder({
 
 Would mean that if an app already exists in the user directory, if the user chooses to 'Continue Move' then the function would continue with its default behavior and the existing app will be trashed and the active app moved into its place.
 
+### `app.registerForRemoteNotifications()` _macOS_
+
+Registers this app with Apple Push Notification service (APNS) to receive [Badge, Sound, and Alert](https://developer.apple.com/documentation/appkit/sremotenotificationtype?language=objc) notifications. If registration is successful, the BrowserWindow event `registered-for-remote-notifications` will be emitted with the APNS device token. Otherwise, the event `failed-to-register-for-remote-notifications` will be emitted.
+See: https://developer.apple.com/documentation/appkit/nsapplication/1428476-registerforremotenotificationtyp?language=objc
+
+### `app.unregisterForRemoteNotifications()` _macOS_
+
+Unregisters the app for notifications received from APNS.
+See: https://developer.apple.com/documentation/appkit/nsapplication/1428747-unregisterforremotenotifications?language=objc
+
 ## Properties
 
 ### `app.accessibilitySupportEnabled` _macOS_ _Windows_

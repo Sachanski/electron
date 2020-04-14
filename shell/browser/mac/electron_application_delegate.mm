@@ -58,18 +58,29 @@ static base::mac::ScopedObjCClassSwizzler* g_swizzle_imk_input_session;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification*)notify {
-  NSUserNotification* user_notification =
+  NSObject* user_notification =
       [notify userInfo][(id) @"NSApplicationLaunchUserNotificationKey"];
+  NSDictionary* notification_info = nil;
 
-  if (user_notification.userInfo != nil) {
+  if (user_notification) {
+    if ([user_notification isKindOfClass:[NSUserNotification class]]) {
+      notification_info =
+        [(NSUserNotification *)user_notification userInfo];
+    } else if (@available(macOS 10.14, *)) {
+      if ([user_notification isKindOfClass:[UNNotificationResponse class]]) {
+        notification_info = atom::UNNotificationResponseToNSDictionary(
+          (UNNotificationResponse *)user_notification);
+      }
+    }
+  }
+
+  if (notification_info) {
     std::unique_ptr<base::DictionaryValue> launch_info =
-        electron::NSDictionaryToDictionaryValue(user_notification.userInfo);
+        electron::NSDictionaryToDictionaryValue(notification_info);
     electron::Browser::Get()->DidFinishLaunching(*launch_info);
   } else {
     electron::Browser::Get()->DidFinishLaunching(base::DictionaryValue());
   }
-
-  [[NSApplication sharedApplication] registerForRemoteNotificationTypes:NSRemoteNotificationTypeAlert | NSRemoteNotificationTypeSound];
 
 #if BUILDFLAG(USE_ALLOCATOR_SHIM)
   // Disable fatal OOM to hack around an OS bug https://crbug.com/654695.
@@ -80,24 +91,6 @@ static base::mac::ScopedObjCClassSwizzler* g_swizzle_imk_input_session;
         @selector(_coreAttributesFromRange:whichAttributes:completionHandler:));
   }
 #endif
-}
-
-- (void)application:(NSApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    NSLog(@"Registered for remote notifications");
-    const unsigned char *dataBuffer = (const unsigned char *)[deviceToken bytes];
-
-    NSUInteger          dataLength  = [deviceToken length];
-    NSMutableString     *hexString  = [NSMutableString stringWithCapacity:(dataLength * 2)];
-
-    for (int i = 0; i < dataLength; ++i)
-        [hexString appendString:[NSString stringWithFormat:@"%02lx", (unsigned long)dataBuffer[i]]];
-
-    NSString* token = [NSString stringWithString:hexString];
-    NSLog(@"%@", token);
-}
-
-- (void)application:(NSApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
-    NSLog(@"Error registering %@", error);
 }
 
 - (NSMenu*)applicationDockMenu:(NSApplication*)sender {
@@ -159,6 +152,38 @@ static base::mac::ScopedObjCClassSwizzler* g_swizzle_imk_input_session;
 
 - (IBAction)newWindowForTab:(id)sender {
   electron::Browser::Get()->NewWindowForTab();
+}
+
+- (void)application:(NSApplication*)application
+    didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
+  // https://stackoverflow.com/a/16411517
+  const char *tokenData = (const char *)[deviceToken bytes];
+  NSMutableString *tokenString = [NSMutableString string];
+  for (NSUInteger i = 0; i < [deviceToken length]; i++) {
+    [tokenString appendFormat:@"%02.2hhX", tokenData[i]];
+  }
+  atom::Browser* browser = atom::Browser::Get();
+  browser->DidRegisterForRemoteNotificationsWithDeviceToken(
+    base::SysNSStringToUTF8(tokenString));
+}
+
+- (void)application:(NSApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
+  std::string error_message(base::SysNSStringToUTF8(
+    [NSString stringWithFormat:@"%ld %@ %@",
+      [error code],
+      [error domain],
+      [error userInfo]]));
+  atom::Browser* browser = atom::Browser::Get();
+  browser->DidFailToRegisterForRemoteNotificationsWithError(error_message);
+}
+
+- (void)application:(NSApplication*)application
+    didReceiveRemoteNotification:(NSDictionary*)userInfo {
+  std::unique_ptr<base::DictionaryValue> user_info =
+      atom::NSDictionaryToDictionaryValue(userInfo);
+  atom::Browser* browser = atom::Browser::Get();
+  browser->DidReceiveRemoteNotification(*user_info);
 }
 
 @end

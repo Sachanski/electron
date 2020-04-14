@@ -77,6 +77,18 @@ class BrowserObserver : public base::CheckedObserver {
       const base::DictionaryValue& user_info) {}
   // User clicked the native macOS new tab button. (macOS only)
   virtual void OnNewWindowForTab() {}
+
+  // The browser successfully registered for APNS. (macOS only)
+  virtual void OnDidRegisterForRemoteNotificationsWithDeviceToken(
+      const std::string& token) {}
+
+  // The browser failed to register for APNS. (macOS only)
+  virtual void OnDidFailToRegisterForRemoteNotificationsWithError(
+      const std::string& error) {}
+
+  // The browser received a remote notification from APNS (macOS only)
+  virtual void OnDidReceiveRemoteNotification(
+      const base::DictionaryValue& user_info) {}
 #endif
 
  protected:

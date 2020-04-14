@@ -8,7 +8,9 @@
 #include <memory>
 
 #import <Foundation/Foundation.h>
-
+#ifdef MAC_OS_X_VERSION_10_14
+#import <UserNotifications/UserNotifications.h>
+#endif
 namespace base {
 class ListValue;
 class DictionaryValue;
@@ -24,6 +26,9 @@ NSDictionary* DictionaryValueToNSDictionary(const base::DictionaryValue& value);
 
 std::unique_ptr<base::DictionaryValue> NSDictionaryToDictionaryValue(
     NSDictionary* dict);
+
+NSDictionary* UNNotificationResponseToNSDictionary(
+    UNNotificationResponse* response) API_AVAILABLE(macosx(10.14));
 
 }  // namespace electron
 
