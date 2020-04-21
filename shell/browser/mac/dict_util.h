@@ -8,9 +8,7 @@
 #include <memory>
 
 #import <Foundation/Foundation.h>
-#ifdef MAC_OS_X_VERSION_10_14
 #import <UserNotifications/UserNotifications.h>
-#endif
 namespace base {
 class ListValue;
 class DictionaryValue;
